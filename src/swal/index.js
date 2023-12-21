@@ -1,11 +1,15 @@
 import Swal from "sweetalert2";
 import { Colors } from "../styles/theme";
+import "./index.css";
 
 export const basicSwal = (icon, title) => {
   return Swal.fire({
     icon: icon,
     title: title,
     background: "#bcaaa4",
+    customClass: {
+      popup: "basic-title",
+    },
   });
 };
 

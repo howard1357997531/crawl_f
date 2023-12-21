@@ -76,7 +76,7 @@ export const CurrencyFiveDaysSmBox = styled(Box, {
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  height: "30px",
+  height: "35px",
   borderTop: isFirst ? "none" : `1px solid ${Colors.brown200}`,
 }));
 
@@ -106,7 +106,7 @@ export const PrevFiveDayBox = styled(Box)(({ theme }) => ({
   alignItems: "center",
   height: "30px",
   marginTop: "10px",
-  margin: "10px 0px",
+  marginBottom: "20px",
   padding: "0px 50px",
 }));
 

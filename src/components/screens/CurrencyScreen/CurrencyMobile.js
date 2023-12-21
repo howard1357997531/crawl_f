@@ -24,14 +24,6 @@ import { Backdrop, Box, Button, Typography } from "@mui/material";
 import { basicSwal } from "../../../swal";
 
 function CurrencyMobile() {
-  const qweqwe = [
-    { time: "2023/10/8", rate: "50" },
-    { time: "2023/10/8", rate: "50" },
-    { time: "2023/10/8", rate: "50" },
-    { time: "2023/10/8", rate: "50" },
-    { time: "2023/10/8", rate: "50" },
-  ];
-
   const [loading, setLoading] = useState(true);
   const [crawlLoading, setCrawlLoading] = useState(true);
   const [addFiveDaysLoading, setAddFiveDaysLoading] = useState(false);
@@ -39,35 +31,36 @@ function CurrencyMobile() {
   const [currencyName, setCurrencyName] = useState(null);
   const [isSelect, setIsSelect] = useState(null);
   const [price, setPrice] = useState(null);
-  const [currenctData, setCurrencyData] = useState(qweqwe);
+  const [currenctData, setCurrencyData] = useState([]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-    // liff.init({ liffId: "2002355355-qonodd6j" }).then(() => {
-    //   if (liff.isLoggedIn) {
-    //     const userId = liff.getContext().userId;
-    //     setUser(userId);
-    //     axios.post(`${domain}/get_currency_data/`, { userId }).then((res) => {
-    //       setLoading(false);
-    //       setCurrencyName(res.data.currency);
-    //     });
-    //   }
-    // });
+    liff.init({ liffId: "2002355355-qonodd6j" }).then(() => {
+      if (liff.isLoggedIn) {
+        const userId = liff.getContext().userId;
+        setUser(userId);
+        axios.post(`${domain}/get_currency_data/`, { userId }).then((res) => {
+          setLoading(false);
+          setCurrencyName(res.data.currency);
+          setCurrencyData(res.data.crawls);
+          if (res.data.store_data !== "no") {
+            setIsSelect(res.data.store_data.condition);
+            setPrice(res.data.store_data.price);
+          }
+        });
+      }
+    });
     // const userId = "Ud4ebcf29d07cc6c31e8de54042307138";
+    // setUser(userId);
     // axios.post(`${domain}/get_currency_data/`, { userId }).then((res) => {
     //   setLoading(false);
     //   setCurrencyName(res.data.currency);
+    //   setCurrencyData(res.data.crawls);
+    //   if (res.data.store_data !== "no") {
+    //     setIsSelect(res.data.store_data.condition);
+    //     setPrice(res.data.store_data.price);
+    //   }
     // });
   }, [setLoading]);
-
-  if (isSelect && price) {
-    var cond = isSelect === "left" ? ">" : "<";
-  }
-
-  const text1 = `${cond}`;
-  const text2 = `${price}`;
 
   const conditionHandler = (state) => {
     setIsSelect(state);
@@ -78,38 +71,49 @@ function CurrencyMobile() {
   };
 
   const btnHandler = () => {
-    if (!isSelect && !price) {
-      basicSwal("warning", "尚未選擇判斷條件和金額");
-      return;
-    } else if (!isSelect) {
-      basicSwal("warning", "尚未選擇判斷條件");
-      return;
-    } else if (!price) {
-      basicSwal("warning", "尚未選擇金額");
-      return;
-    }
-
-    const condition = isSelect === "left" ? ">" : "<";
-    // axios
-    //   .post(`${domain}/store_currency/`, {
-    //     user,
-    //     currencyName,
-    //     condition,
-    //     price,
-    //   })
-    //   .then((res) => {
-    //     setCurrencyData(res.data.datas);
-    //   });
-    basicSwal("success", "匯率儲存成功");
+    const condition = isSelect;
+    axios
+      .post(`${domain}/store_currency/`, {
+        user,
+        currencyName,
+        condition,
+        price,
+      })
+      .then((res) => {
+        basicSwal("success", "匯率儲存成功").then((result) => {
+          if (result.isConfirmed) {
+            // liff
+            //   .sendMessages([
+            //     {
+            //       type: "text",
+            //       text: `已儲存${currencyName}至資料庫`,
+            //     },
+            //   ])
+            //   .then(() => {
+            //     liff.closeWindow();
+            //   })
+            //   .catch((err) => {
+            //     console.log("error", err);
+            //   });
+            liff.closeWindow();
+          }
+        });
+      });
   };
 
   const fiveDayBtnHandler = () => {
     setAddFiveDaysLoading(true);
-    setTimeout(() => {
-      setAddFiveDaysLoading(false);
-      const data = [...currenctData, ...qweqwe];
-      setCurrencyData(data);
-    }, 2000);
+    const crawl_num = currenctData.length;
+    axios
+      .post(`${domain}/get_next_five_day_currency/`, {
+        currencyName,
+        crawl_num,
+      })
+      .then((res) => {
+        setAddFiveDaysLoading(false);
+        const data = [...currenctData, ...res.data.crawls];
+        setCurrencyData(data);
+      });
   };
 
   const closeFiveDayBtnHandler = () => {
@@ -123,21 +127,21 @@ function CurrencyMobile() {
     </Backdrop>
   ) : (
     <>
-      {/* <Title>已選擇: {currencyName}</Title> */}
-      <Title>已選擇: 英鎊</Title>
+      <Title>已選擇: {currencyName}</Title>
+      {/* <Title>已選擇: 英鎊</Title> */}
       <Box mt={2} pl={"50px"} color={Colors.greyTextBlood}>
         請選擇判斷條件:
       </Box>
       <ConditionBox>
         <ConditionSmBox
-          data={[isSelect === "left", Colors.darkGreen]}
-          onClick={() => conditionHandler("left")}
+          data={[isSelect === ">", Colors.darkGreen]}
+          onClick={() => conditionHandler(">")}
         >
           {">"}
         </ConditionSmBox>
         <ConditionSmBox
-          data={[isSelect === "right", Colors.red]}
-          onClick={() => conditionHandler("right")}
+          data={[isSelect === "<", Colors.red]}
+          onClick={() => conditionHandler("<")}
         >
           {"<"}
         </ConditionSmBox>
@@ -147,6 +151,7 @@ function CurrencyMobile() {
         <StyleTextField
           label="請輸入金額"
           type="number"
+          defaultValue={price ? price : null}
           onChange={priceHandler}
         />
       </TextFieldBox>
@@ -167,10 +172,10 @@ function CurrencyMobile() {
                     width: "20px",
                     color: "#fff",
                     backgroundColor:
-                      isSelect === "left" ? Colors.darkGreen : Colors.red800,
+                      isSelect === ">" ? Colors.darkGreen : Colors.red800,
                   }}
                 >
-                  {text1}
+                  {isSelect}
                 </span>{" "}
                 金額:{" "}
                 <span
@@ -178,7 +183,7 @@ function CurrencyMobile() {
                     color: Colors.yellow,
                   }}
                 >
-                  {text2}
+                  {price}
                 </span>
               </Typography>
               <Button
@@ -200,17 +205,15 @@ function CurrencyMobile() {
         </Box>
       ) : null}
 
-      {/* <Typography align="center" mt={"15px"}}>
-        近五日{currencyName}即期賣出匯率
-      </Typography> */}
-
       <Typography align="center" mt={"15px"}>
         近五日
-        <span style={{ color: Colors.red800, margin: "0px 5px 6px" }}>123</span>
+        <span style={{ color: Colors.red800, margin: "0px 5px 6px" }}>
+          {currencyName}
+        </span>
         即期賣出匯率
       </Typography>
 
-      <Box sx={{ padding: "0px 50px" }}>
+      <Box sx={{ padding: "0px 50px" }} mt={"2px"}>
         <CurrencyFiveDaysBox>
           {!crawlLoading ? (
             <CrawlSpinnerBox>
@@ -218,22 +221,14 @@ function CurrencyMobile() {
             </CrawlSpinnerBox>
           ) : (
             <>
-              {currenctData.map((data) => (
-                <CurrencyFiveDaysSmBox isFirst={true}>
+              {currenctData.map((data, index) => (
+                <CurrencyFiveDaysSmBox key={index} isFirst={index === 0}>
                   <CurrencyFiveDaysDate>{data.time}</CurrencyFiveDaysDate>
                   <CurrencyFiveDaysRate>{data.rate}</CurrencyFiveDaysRate>
                 </CurrencyFiveDaysSmBox>
               ))}
             </>
           )}
-
-          {/* {currenctData.length !== 0
-          ? currenctData.map((data, index) => (
-              <CurrencyFiveDaysSmBox
-                key={index}
-              >{`${data.time} ${data.rate}`}</CurrencyFiveDaysSmBox>
-            ))
-          : null} */}
         </CurrencyFiveDaysBox>
       </Box>
 
